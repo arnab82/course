@@ -50,7 +50,7 @@ A = [1.0 -1.0 -2.0 1.0;
 
 b = [1.0, 4.0, 2.0, 3.0]
 # Getting the L,U,P and solution vector
-L,U,P,x= lu_decomposition(A,lu_decomposition_pivoting,b)
+@time L,U,P,x= lu_decomposition(A,lu_decomposition_pivoting,b)
 # Display L, U, and P matrices
 println("L Matrix:")
 display(L)

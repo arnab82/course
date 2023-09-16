@@ -50,7 +50,7 @@ A = [1.0 -1.0 -2.0 1.0;
 b = [1.0, 4.0, 2.0, 3.0]
 
 # Solving the system of equations via gauss elimination
-x = gauss_elimination(A, b)
+@time x = gauss_elimination(A, b)
 expected_solution = [21/34, 43/68, -13/34, 1/4]
 
 @printf("Evaluated Solution (x, y, z, u): %6.4f %6.4f %6.4f %6.4f\n", x[1], x[2], x[3], x[4])
