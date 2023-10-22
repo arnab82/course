@@ -1,71 +1,106 @@
 using LinearAlgebra
 using Plots
-
-# Inputs
-Nx = 50
+using SparseArrays
+using IterativeSolvers
+# Inputs for creating the grid
+Nx = 50 
 Ny = 50
-Lx = 5
-Ly = 5
+Lx = 1 
+Ly = 1
 
-# Grid
+# Define the Grid
 x = range(0, stop=Lx, length=Nx)
 y = range(0, stop=Ly, length=Ny)
 dx = x[2] - x[1]
 dy = y[2] - y[1]
+"""
+    relaxation_method_pde_elliptical(Nx::Int, Ny::Int, x, y)
 
-# Initialize matrices
-N = Nx * Ny
-M = zeros(Float64, N, N)
-B = zeros(Float64, N)
+Initialize matrices and boundary conditions for the elliptical partial differential equation.
 
-# Interior points
-for i in 2:Nx-1
-    for j in 2:Ny-1
+# Arguments
+- `Nx::Int`: The number of grid points along the x-axis.
+- `Ny::Int`: The number of grid points along the y-axis.
+- `x::Vector{Float64}`: A vector containing the x-coordinate values.
+- `y::Vector{Float64}`: A vector containing the y-coordinate values.
+
+# Returns
+- `M::Matrix{Float64}`: The coefficient matrix representing the discretized elliptical PDE.
+- `B::Vector{Float64}`: The right-hand side vector representing boundary conditions.
+"""
+
+function relaxation_method_pde_elliptical(Nx::Int, Ny::Int,x::Vector{Float64},y::Vector{Float64})
+        # Initialize matrices
+    N = Nx * Ny
+    M = zeros(Float64, N, N)
+    B = zeros(Float64, N)
+    # Interior points
+    for i in 2:Nx-1
+        for j in 2:Ny-1
+            n = i + (j - 1) * Nx
+            M[n, n] = -4
+            M[n, n - 1] = 1
+            M[n, n + 1] = 1
+            M[n, n - Nx] = 1
+            M[n, n + Nx] = 1
+            B[n] = 0
+        end
+    end
+
+    # Boundary conditions
+    # Top BC φ(x, y=∞) = 0, 0 ≤ x ≤ 1
+    i = 1
+    for j in 1:Ny
         n = i + (j - 1) * Nx
-        M[n, n] = -4
-        M[n, n - 1] = 1
-        M[n, n + 1] = 1
-        M[n, n - Nx] = 1
-        M[n, n + Nx] = 1
+        M[n, n] = 1
         B[n] = 0
     end
+
+    # Bottom BC φ(x=0, y) = 0
+    i = Nx
+    for j in 1:Ny
+        n = i + (j - 1) * Nx
+        M[n, n] = 1
+        B[n] = 0
+    end
+
+    # Left BC φ(x, y=0) = x(1 − x)
+    j = 1
+    for i in 1:Nx
+        n = i + (j - 1) * Nx
+        M[n, n] = 1
+        B[n] = x[i] * (1 - x[i])
+    end
+
+    # Right BC φ(x=1, y) = 0, 0 ≤ y ≤ ∞
+    j = Ny
+    for i in 1:Nx
+        n = i + (j - 1) * Nx
+        M[n, n] = 1
+        B[n] = 0
+    end
+    return M,B
 end
+M,B=relaxation_method_pde_elliptical(Nx,Ny,x,y)
+#using the library to see the custom lu decomposition is working fine
+# M_sparse = sparse(M)
+# F = lu(M_sparse)
+# phi_vec = F \ B
 
-# Boundary conditions
-# Left BC phi=y
-i = 1
-for j in 1:Ny
-    n = i + (j - 1) * Nx
-    M[n, n] = 1
-    B[n] = y[j]
-end
+#custom lu decomposition
+"""
+    lu_decomposition_pivoting(A::Matrix)
 
-# Right BC phi=-(1-y)
-i = Nx
-for j in 1:Ny
-    n = i + (j - 1) * Nx
-    M[n, n] = 1
-    B[n] = -(1 - y[j])
-end
+Perform LU decomposition of a matrix A with partial pivoting.
 
-# Bottom BC phi=-x
-j = 1
-for i in 1:Nx
-    n = i + (j - 1) * Nx
-    M[n, n] = 1
-    B[n] = -x[i]
-end
+# Arguments
+- `A::Matrix{Float64}`: The input matrix to be decomposed.
 
-# Top BC phi=1-x
-j = Ny
-for i in 1:Nx
-    n = i + (j - 1) * Nx
-    M[n, n] = 1
-    B[n] = 1 - x[i]
-end
-
-
-
+# Returns
+- `L::Matrix{Float64}`: The lower triangular matrix.
+- `U::Matrix{Float64}`: The upper triangular matrix.
+- `P::Matrix{Float64}`: The permutation matrix.
+"""
 function lu_decomposition_pivoting(A::Matrix)
     n = size(A, 1)
     L = Matrix{Float64}(I, n, n)#initializing Lower traingular matrix as an identity matrix
@@ -107,11 +142,10 @@ function lu_decomposition(A,lu_decomposition_pivoting::Function, b::Vector)
     return L,U,P,x
 end
 # Solve for the potential points M*phi=B
-# phi_vec = M \ B
 @time L,U,P,phi_vec= lu_decomposition(M,lu_decomposition_pivoting,B)
 
 display(phi_vec)
-# Convert vector solution to a 2D array
+
 phi = zeros(Float64, Nx, Ny)
 for i in 1:Nx
     for j in 1:Ny
@@ -120,7 +154,7 @@ for i in 1:Nx
     end
 end
 display(phi)
-# Create the 3D plot using Plots
+
 heatmap(x, y, phi', c=:viridis, xlabel="x", ylabel="y", aspect_ratio=1)
 plot!
 savefig("potential_plot.png")
