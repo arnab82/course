@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-h=0.1
-k=0.0025
-x=np.arange(0,2+h,h)
-t=np.arange(0,0.02+k,k)
+h=0.04
+k=0.00075
+x=np.arange(0,2,h)
+t=np.arange(0,0.045+k,k)
 boundary_conditions=[0,0]
 n=len(x)
 m=len(t)
@@ -28,13 +28,53 @@ for j in range(1,m):
     print(solution)
     T[1:-1,j]=solution
 
-print(T)
-R=np.linspace(1,0,m)
-B=np.linspace(0,1,m)
-G=0
-for j in range(m):
-    plt.plot(x,T[:,j],color=[R[j],G,B[j]])
-plt.xlabel('distance[m]')
-plt.ylabel('Temperature[$\degree$ C]')
-plt.legend([f't={value}s'for value in t.round(3)])
+matrix1=[]
+
+matrix1.append(T[:,int(0.005/k)])
+matrix1.append(T[:,int(0.01/k)])
+matrix1.append(T[:,int(0.02/k)])
+matrix1.append(T[:,int(0.03/k)])
+matrix1.append(T[:,int(0.045/k)])
+labels=[0.005,0.01,0.02,0.03,0.045]
+print(matrix1)
+
+for i in range(5):
+    plt.plot(x,matrix1[i])
+    
+plt.xlabel('x')
+plt.ylabel('phi(x,t)')
+plt.legend([f't={value}'for value in labels])
+plt.title("implicit method at dt=0.00075")
+plt.savefig("impicit_method_0.00075.png")
+plt.show()
+
+x1= np.linspace(0, 2 , 50)
+t1 = 0.045
+# Calculate Ψ(x, t) using the provided equation
+def psi_analytical(x, t):
+    result = 0.0
+    for n in range(0, len(x)): 
+        result += (-1)**n / ((2 * n + 1) ** 2 * (np.pi ** 2)) * np.exp(
+                -((2 * n + 1) ** 2 * (np.pi ** 2) * t) / 4) * np.sin((n + 1 / 2) * np.pi * x)
+    return result * 8.0
+# Calculate Ψ(x, t) for the given x and t
+psi_values = psi_analytical(x1, t1)
+numerical_values = matrix1[4]
+
+fig, ax1 = plt.subplots()
+l1, = ax1.plot(x, psi_values, color='red', label="Analytical")
+ax2 = ax1.twinx()
+l2, = ax2.plot(x, numerical_values, color='orange', label="Numerical")
+
+# Combine the legends from both axes
+lines = [l1, l2]
+labels = [line.get_label() for line in lines]
+ax1.legend(lines, labels)
+
+ax1.set_xlabel('x')
+ax1.set_ylabel('Ψ(x, t)')
+ax1.set_title('Wave Function Ψ(x, t)')
+ax1.grid(True)
+
+plt.savefig("analytical_solution_vs_numerical_implicit.png")
 plt.show()

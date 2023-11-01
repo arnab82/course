@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-h=0.045
-k=0.0015
+h=0.04
+k=0.001
 x=np.arange(0,2+h,h)
-t=np.arange(0,0.05+k,k)
+t=np.arange(0,0.045+k,k)
 boundary_conditions=[0,0]
 n=len(x)
 m=len(t)
@@ -23,15 +23,26 @@ for j in range(1,m):
     for i in range(1,n-1):
         # print(i,j)
         T[i,j]=factor*T[i-1,j-1]+(1-2*factor)*T[i,j-1]+factor*T[i+1,j-1]
-print(T)
-R=np.linspace(1,0,m)
-B=np.linspace(0,1,m)
-G=0
-for j in range(m):
-    plt.plot(x,T[:,j],color=[R[j],G,B[j]])
-plt.xlabel('distance[m]')
-plt.ylabel('Temperature[$\degree$ C]')
-plt.legend([f't={value}s'for value in t.round(3)])
+# print(T)
+matrix1=[]
+
+matrix1.append(T[:,int(0.005/k)])
+matrix1.append(T[:,int(0.01/k)])
+matrix1.append(T[:,int(0.02/k)])
+matrix1.append(T[:,int(0.03/k)])
+matrix1.append(T[:,int(0.045/k)])
+labels=[0.005,0.01,0.02,0.03,0.045]
+print(matrix1)
+
+for i in range(5):
+    plt.plot(x,matrix1[i])
+    
+plt.xlabel('x')
+plt.ylabel('phi(x,t)')
+plt.legend([f't={value}'for value in labels])
+plt.title("explicit method at dt=0.001")
+plt.savefig("explicit_method_0.001.png")
 plt.show()
+
 
     
